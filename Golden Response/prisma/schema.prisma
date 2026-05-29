@@ -1,0 +1,138 @@
+// Inkwell — a flat, multi-author blogging platform.
+// Every signed-in user is both a full author and a full reader.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  // argon2id hash — never plaintext.
+  passwordHash String
+  name         String
+  username     String   @unique
+  bio          String?  @db.VarChar(280)
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  posts     Post[]
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
+
+  @@index([username])
+}
+
+model Category {
+  id    String @id @default(cuid())
+  name  String @unique
+  slug  String @unique
+  posts Post[]
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String // display form, e.g. "NextJS"
+  slug  String    @unique // normalized lowercase key for dedupe + lookup
+  posts PostTag[]
+
+  @@index([slug])
+}
+
+model Post {
+  id          String     @id @default(cuid())
+  title       String     @db.VarChar(120)
+  slug        String     @unique
+  // Sanitized HTML from Tiptap.
+  contentHtml String     @db.Text
+  // Plain-text excerpt for cards + read-time + search ranking.
+  excerpt     String     @db.VarChar(300)
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  readMinutes Int        @default(1)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  authorId   String
+  author     User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  tags      PostTag[]
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
+
+  // Full-text search vector — populated by a trigger (see migration).
+  // Unsupported so Prisma leaves the column management to raw SQL.
+  searchVector Unsupported("tsvector")?
+
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([authorId])
+  @@index([categoryId])
+}
+
+model PostTag {
+  postId String
+  tagId  String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String   @db.VarChar(2000)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Nullable self-relation so threaded replies can be added later
+  // without a migration that touches existing rows.
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  @@index([postId, createdAt])
+}
+
+model Like {
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+model Bookmark {
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([userId, createdAt])
+}

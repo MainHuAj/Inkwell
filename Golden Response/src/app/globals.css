@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 98%;
+    --foreground: 24 10% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 10% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 12%;
+    --primary: 18 64% 46%;
+    --primary-foreground: 40 33% 98%;
+    --secondary: 30 20% 94%;
+    --secondary-foreground: 24 10% 18%;
+    --muted: 30 16% 94%;
+    --muted-foreground: 24 6% 42%;
+    --accent: 30 24% 92%;
+    --accent-foreground: 24 10% 18%;
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 28 14% 88%;
+    --input: 28 14% 86%;
+    --ring: 18 64% 46%;
+    --radius: 0.6rem;
+  }
+
+  .dark {
+    --background: 24 10% 8%;
+    --foreground: 36 18% 90%;
+    --card: 24 9% 11%;
+    --card-foreground: 36 18% 90%;
+    --popover: 24 9% 11%;
+    --popover-foreground: 36 18% 90%;
+    --primary: 20 78% 56%;
+    --primary-foreground: 24 10% 8%;
+    --secondary: 24 7% 16%;
+    --secondary-foreground: 36 18% 90%;
+    --muted: 24 7% 16%;
+    --muted-foreground: 30 8% 62%;
+    --accent: 24 7% 18%;
+    --accent-foreground: 36 18% 90%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 24 7% 20%;
+    --input: 24 7% 22%;
+    --ring: 20 78% 56%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    @apply bg-primary/20;
+  }
+}
+
+/* Visible focus states for keyboard users. */
+@layer base {
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+/*
+ * Editorial reading styles for rendered post bodies. Generous line height,
+ * a real type scale, and a comfortable measure (~68ch). Applied via .prose.
+ */
+@layer components {
+  .prose {
+    @apply text-[1.18rem] leading-[1.8] text-foreground/90;
+    font-family: var(--font-serif), Georgia, serif;
+    max-width: 68ch;
+  }
+  .prose p {
+    @apply my-6;
+  }
+  .prose h1 {
+    @apply mt-12 mb-4 font-sans text-3xl font-bold tracking-tight text-foreground;
+  }
+  .prose h2 {
+    @apply mt-10 mb-3 font-sans text-2xl font-bold tracking-tight text-foreground;
+  }
+  .prose h3 {
+    @apply mt-8 mb-2 font-sans text-xl font-semibold text-foreground;
+  }
+  .prose a {
+    @apply font-medium text-primary underline decoration-primary/30 underline-offset-2 transition-colors hover:decoration-primary;
+  }
+  .prose strong {
+    @apply font-semibold text-foreground;
+  }
+  .prose ul {
+    @apply my-6 list-disc space-y-2 pl-6;
+  }
+  .prose ol {
+    @apply my-6 list-decimal space-y-2 pl-6;
+  }
+  .prose blockquote {
+    @apply my-8 border-l-2 border-primary pl-6 font-serif text-xl italic text-foreground/80;
+  }
+  .prose code {
+    @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground;
+  }
+  .prose pre {
+    @apply my-6 overflow-x-auto rounded-lg bg-foreground/[0.04] p-4 font-mono text-sm leading-relaxed dark:bg-foreground/[0.06];
+  }
+  .prose pre code {
+    @apply bg-transparent p-0;
+  }
+  .prose img {
+    @apply my-8 w-full rounded-lg border;
+  }
+  .prose hr {
+    @apply my-10 border-border;
+  }
+
+  /* Tiptap editor surface shares the reading styles. */
+  .ProseMirror {
+    @apply min-h-[50vh] outline-none;
+  }
+  .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    @apply pointer-events-none float-left h-0 text-muted-foreground;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Entrance animations are CSS-driven so server-rendered content is visible
+     immediately and fades in on first paint — it never waits on JS hydration. */
+  @keyframes ink-fade-rise {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes ink-page-fade {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .ink-fade-rise {
+    animation: ink-fade-rise 0.5s cubic-bezier(0.21, 0.5, 0.4, 1) both;
+  }
+  .ink-page-fade {
+    animation: ink-page-fade 0.35s cubic-bezier(0.21, 0.5, 0.4, 1) both;
+  }
+}
+
+/* Honor the OS-level reduced-motion preference globally as a safety net. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
